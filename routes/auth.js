@@ -2,7 +2,7 @@ var express = require("express");
 
 var router = express.Router();
 const { check } = require("express-validator");
-const { signup, signout, signin, isSignedIn } = require("../controllers/auth");
+const { signup, signout, signin, isSignedIn, sendVerificationEmail } = require("../controllers/auth");
 
 router.post(
     '/signup',
@@ -26,6 +26,14 @@ router.post(
 router.get(
     '/signout',
     signout
+)
+
+router.post(
+    '/sendVerificationEmail',
+    [
+        check('email', 'valid email is required.').isEmail(),
+    ],
+    sendVerificationEmail
 )
 
 module.exports = router;
