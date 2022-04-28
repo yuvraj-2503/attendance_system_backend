@@ -17,12 +17,14 @@ exports.signup = async (req, res) =>{
         })
     }
     
-    const { name, email, password } = req.body;
+    const { name, email, password , college, department } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
         name : name,
         email: email,
-        password: hashedPassword
+        password: hashedPassword,
+        college : college,
+        department : department
     });
 
     user.save().then((result)=> {
