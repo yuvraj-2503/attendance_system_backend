@@ -130,7 +130,7 @@ exports.sendVerificationEmail = async (req, res) => {
     });
     token.save();
 
-    const link = `${process.env.BASE_URL}${token.userId}/${token.token}`;
+    const link = `${process.env.BASE_URL}/api/verifyEmail/${token.userId}/${token.token}`;
 
     try{
         let transporter = nodemailer.createTransport({
