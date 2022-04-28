@@ -1,9 +1,11 @@
 const { check, validationResult } = require("express-validator");
-const User = require('../models/user')
+const {User, validate } = require('../models/user')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const expressJwt = require('express-jwt');
 const nodemailer = require('nodemailer');
+const Token = require('../models/token')
+const crypto = require('crypto');
 
 exports.signup = async (req, res) =>{
     const errors = validationResult(req);
@@ -100,7 +102,7 @@ exports.signout = (req, res) => {
     });
 }
 
-exports.sendVerificationEmail = (req, res) => {
+exports.sendVerificationEmail = async (req, res) => {
     const errors = validationResult(req);
     if(errors.array().length>0){
         return res.status(400).json({
@@ -110,7 +112,25 @@ exports.sendVerificationEmail = (req, res) => {
         });
     }
 
-    const { email } = req.body;
+    const { name, email } = req.body;
+
+    let user = await User.findOne({ email : email, verified : false }); 
+
+    if(!user){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "invalid user...try again..",
+            "result" : null
+        })
+    }
+
+    let token = await new Token({
+        userId : user._id,
+        token : crypto.randomBytes(32).toString('hex')
+    });
+    token.save();
+
+    const link = `${process.env.BASE_URL}${token.userId}/${token.token}`;
 
     try{
         let transporter = nodemailer.createTransport({
@@ -127,9 +147,9 @@ exports.sendVerificationEmail = (req, res) => {
 
         let mailOptions = {
             from: `"Yuvraj Singh"<${process.env.MAIL_USERNAME}>`,
-            to: email,
+            to: user.email,
             subject: 'ePathshala - Email Verification',
-            text: `Dear User,\r\n\r\nPlease verify your email by entering the otp provided: \r\n\r\n`
+            text: `Dear ${user.name},\r\n\r\nPlease verify your email by clicking the following link: \r\n\r\n${link}`
         };
     
         transporter.sendMail(mailOptions, (err, data) => {
@@ -154,6 +174,32 @@ exports.sendVerificationEmail = (req, res) => {
             "result" : null
         });
     }
+}
 
+exports.verifyEmail = async (req, res)=> {
+    const user = await User.findOne({ _id : req.params.userId , verified : false });
 
+    if(!user){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "invalid link..",
+            "result" : null
+        })
+    }
+
+    const token = await Token.findOne({
+        userId : user._id,
+        token: req.params.token
+    });
+
+    if(!token){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "invalid link..",
+            "result" : null
+        });
+    }
+
+    await User.findByIdAndUpdate(user._id, {verified : true} );
+    await Token.findOneAndRemove({ userId : user._id });
 }
