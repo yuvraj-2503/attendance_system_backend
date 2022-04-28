@@ -18,7 +18,7 @@ exports.signup = async (req, res) =>{
     }
     
     const { name, email, password , college, department } = req.body;
-    let u1 = User.findOne({ email : {email , $caseSensitive : false } }, );
+    let u1 = User.findOne({ email : {email , $caseSensitive : true } }, );
     if(u1){
         return res.status(400).json({
             "statusCode" : 400,
