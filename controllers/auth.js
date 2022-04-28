@@ -202,4 +202,14 @@ exports.verifyEmail = async (req, res)=> {
 
     await User.findByIdAndUpdate(user._id, {verified : true} );
     await Token.findOneAndRemove({ userId : user._id });
+
+    return res.status(200).json({
+        "statusCode" : 200,
+        "developerMessage" : "email verified successfully.",
+        "result" : {
+            "id" : user._id,
+            "name" : user.name,
+            "email": user.email,
+        }
+    });
 }
