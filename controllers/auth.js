@@ -6,6 +6,9 @@ const expressJwt = require('express-jwt');
 const nodemailer = require('nodemailer');
 const Token = require('../models/token')
 const crypto = require('crypto');
+const otpGenerator = require('otp-generator');
+const { generateOTP } = require('../services/otpService');
+const Otp = require('../models/otp');
 
 exports.signup = async (req, res) =>{
     const errors = validationResult(req);
@@ -102,6 +105,89 @@ exports.signout = (req, res) => {
         "developerMessage" : 'user signed out successfully.',
         "result" : null
     });
+}
+
+exports.sendOtp = async (req, res) => {
+    const errors = validationResult(req);
+    if(errors.array().length>0){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : errors.array()[0].msg,
+            "result" : null
+        });
+    }
+
+    const { name, email } = req.body;
+
+    let user = await User.findOne({ email : email, verified : false }); 
+
+    if(!user){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "invalid user...try again..",
+            "result" : null
+        })
+    }
+
+    const otpGenerated = generateOTP();
+
+    let otp = await new Otp({
+        userId: user._id,
+        otp : otpGenerated
+    });
+
+    otp.save();
+
+    try{
+        let transporter = nodemailer.createTransport({
+            service : 'gmail',
+            auth : {
+                type: 'OAuth2',
+                user: process.env.MAIL_USERNAME,
+                pass: process.env.MAIL_PASSWORD,
+                clientId: process.env.OAUTH_CLIENTID,
+                clientSecret: process.env.OAUTH_CLIENT_SECRET,
+                refreshToken: process.env.OAUTH_REFRESH_TOKEN
+            }
+        })
+
+        let mailOptions = {
+            from: `"Yuvraj Singh"<${process.env.MAIL_USERNAME}>`,
+            to: user.email,
+            subject: 'ePathshala - Email Verification',
+            html: `<div
+            class="container"
+            style="max-width: 90%; margin: auto; padding-top: 20px">
+            <h2>Dear ${user.name},</h2>
+            <h4>You are officially In ✔</h4>
+            <p style="margin-bottom: 30px;">Please verify your email by entering the otp: </p>
+            <h1 style="font-size: 40px; letter-spacing: 2px; text-align:center;">${otpGenerated}</h1>
+            </div>`
+        };
+    
+        transporter.sendMail(mailOptions, (err, data) => {
+            if(err){
+                return res.status(400).json({
+                    "statusCode" : 400,
+                    "developerMessage" : err.message,
+                    "result" : null
+                });
+            }
+    
+            return res.status(200).json({
+                "statusCode" : 200,
+                "developerMessage" : 'email sent successfully',
+                "result" : null
+            });
+        })
+    }catch(e){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : e,
+            "result" : null
+        });
+    }
+
 }
 
 exports.sendVerificationEmail = async (req, res) => {
