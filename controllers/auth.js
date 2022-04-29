@@ -22,7 +22,7 @@ exports.signup = async (req, res) =>{
     
     const { name, email, password , college, department } = req.body;
 
-    let u1 = User.findOne({email }).then((err, result) => {
+    let u1 = User.findOne({email }).then(async (err, result) => {
         if(err || result){
             return res.status(400).json({
                 "statusCode" : 400,
