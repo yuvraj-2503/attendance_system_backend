@@ -201,6 +201,49 @@ exports.sendOtp = async (req, res) => {
 
 }
 
+exports.verifyOtp = async (req, res) => {
+    const { userId, otp } = req.body;
+
+    let user = await User.findById(userId);
+    if(!user){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "user not found.",
+            "result" : null
+        });
+    }
+
+    if(user.verified){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "user already verified.",
+            "result" : null
+        });
+    }
+
+    let otpModel = await Otp.findOne({userId : user._id, otp : otp });
+
+    if(!otpModel){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "invalid otp.",
+            "result" : null
+        });
+    }
+
+    await User.findByIdAndUpdate(user._id, {verified : true });
+
+    return res.status(200).json({
+        "statusCode" : 200,
+        "developerMessage" : "otp verified successfully.",
+        "result" : {
+            "id" : user._id,
+            "name" : user.name,
+            "email" : user.email
+        }
+    });
+}
+
 exports.sendVerificationEmail = async (req, res) => {
     const errors = validationResult(req);
     if(errors.array().length>0){

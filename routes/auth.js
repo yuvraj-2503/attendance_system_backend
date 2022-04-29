@@ -2,7 +2,7 @@ var express = require("express");
 
 var router = express.Router();
 const { check } = require("express-validator");
-const { signup, signout, signin, isSignedIn, sendVerificationEmail, verifyEmail, sendOtp } 
+const { signup, signout, signin, isSignedIn, sendVerificationEmail, verifyEmail, sendOtp, verifyOtp } 
                     = require("../controllers/auth");
 
 router.post(
@@ -43,6 +43,11 @@ router.post(
         check('email', 'valid email is required.').isEmail(),
     ],
     sendOtp
+)
+
+router.post(
+    '/verifyOtp', 
+    verifyOtp
 )
 
 router.get(
