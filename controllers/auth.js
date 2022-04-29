@@ -21,6 +21,16 @@ exports.signup = async (req, res) =>{
     }
     
     const { name, email, password , college, department } = req.body;
+
+    let u1 = User.findOne({email : email});
+    if(u1){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "email already exists..login to continue" ,
+            "result" : null
+        })
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
         name : name,
@@ -44,7 +54,7 @@ exports.signup = async (req, res) =>{
     }).catch((err) => {
         return res.status(400).json({
             "statusCode" : 400,
-            "developerMessage" : "email already exists..login to continue" ,
+            "developerMessage" : "some error occurred." ,
             "result" : null
         })
     });
