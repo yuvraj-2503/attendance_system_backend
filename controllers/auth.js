@@ -22,41 +22,42 @@ exports.signup = async (req, res) =>{
     
     const { name, email, password , college, department } = req.body;
 
-    let u1 = User.findOne({email : email});
-    if(u1){
-        return res.status(400).json({
-            "statusCode" : 400,
-            "developerMessage" : "email already exists..login to continue" ,
-            "result" : null
-        })
-    }
+    let u1 = User.findOne({email }).then((err, result) => {
+        if(err || result){
+            return res.status(400).json({
+                "statusCode" : 400,
+                "developerMessage" : "email already exists..login to continue" ,
+                "result" : null
+            })
+        }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
-        name : name,
-        email: email,
-        password: hashedPassword,
-        college : college,
-        department : department
-    });
-
-    user.save().then((result)=> {
-       
-        return res.status(200).json({
-            "statusCode" : 200,
-            "developerMessage": "user signed up successfully.",
-            "result" : {
-                "id" : result._id,
-                "name" : result.name,
-                "email": result.email,
-            }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({
+            name : name,
+            email: email,
+            password: hashedPassword,
+            college : college,
+            department : department
         });
-    }).catch((err) => {
-        return res.status(400).json({
-            "statusCode" : 400,
-            "developerMessage" : "some error occurred." ,
-            "result" : null
-        })
+
+        user.save().then((result)=> {
+        
+            return res.status(200).json({
+                "statusCode" : 200,
+                "developerMessage": "user signed up successfully.",
+                "result" : {
+                    "id" : result._id,
+                    "name" : result.name,
+                    "email": result.email,
+                }
+            });
+        }).catch((err) => {
+            return res.status(400).json({
+                "statusCode" : 400,
+                "developerMessage" : "some error occurred." ,
+                "result" : null
+            })
+        });
     });
 }
 
