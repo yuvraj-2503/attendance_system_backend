@@ -355,3 +355,57 @@ exports.verifyEmail = async (req, res)=> {
         }
     });
 }
+
+exports.updatePhoneNumber = async (req, res) => {
+    const errors = validationResult(req);
+    if(errors.array().length>0){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : errors.array()[0].msg,
+            "result" : null
+        });
+    }
+
+    const { email, phone, password } = req.body;
+
+    let u1 = await User.findOne({ email: email });
+    if(!u1){
+        return res.status(404).json({
+            "statusCode" : 404,
+            "developerMessage" : "user not found..try again..",
+            "result" : null
+        });
+    }
+
+    const match = await bcrypt.compare(password, u1.password);
+
+    if(!match){
+        return res.status(401).json({
+            "statusCode" : 401,
+            "developerMessage" : 'invalid password..you are not authorized to update..',
+            "result" : null
+        });
+    }
+
+    await User.findOneAndUpdate({ email: u1.email, password: u1.password }, {phone: phone }).then((result) => {
+        // console.log(result);
+        // console.log(err);
+        // if(err){
+        //     return res.status(400).json({
+        //         "statusCode" : 400,
+        //         "developerMessage" : "some error occurred.",
+        //         "result" : null
+        //     });
+        // }
+
+        return res.status(200).json({
+            "statusCode" : 200,
+            "developerMessage" : "phone number added successfully.",
+            "result" : {
+                "id" : result._id,
+                "name" : result.name,
+                "email" : result.email
+            }
+        });
+    });
+}
