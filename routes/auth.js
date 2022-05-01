@@ -2,7 +2,8 @@ var express = require("express");
 
 var router = express.Router();
 const { check } = require("express-validator");
-const { signup, signout, signin, isSignedIn, sendVerificationEmail, verifyEmail, sendOtp, verifyOtp, updatePhoneNumber } 
+const { signup, signout, signin, isSignedIn, sendVerificationEmail, verifyEmail,
+    sendOtpToPhone, sendOtp, verifyOtp, updatePhoneNumber } 
                     = require("../controllers/auth");
 
 router.post(
@@ -61,6 +62,14 @@ router.post(
 router.get(
     '/verifyEmail/:userId/:token',
     verifyEmail
+)
+
+router.post(
+    '/otp/phone',
+    [
+        check('phone', 'valid phone number is required.').isMobilePhone(),
+    ],
+    sendOtpToPhone
 )
 
 module.exports = router;

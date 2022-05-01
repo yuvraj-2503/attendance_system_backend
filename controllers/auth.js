@@ -9,6 +9,8 @@ const crypto = require('crypto');
 const otpGenerator = require('otp-generator');
 const { generateOTP } = require('../services/otpService');
 const Otp = require('../models/otp');
+const { message } = require('../templates/sms_verification');
+const AWS = require('aws-sdk');
 
 exports.signup = async (req, res) =>{
     const errors = validationResult(req);
@@ -408,4 +410,93 @@ exports.updatePhoneNumber = async (req, res) => {
             }
         });
     });
+}
+
+exports.sendOtpToPhone = async (req, res) => {
+    const errors = validationResult(req);
+    if(errors.array().length>0){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : errors.array()[0].msg,
+            "result" : null
+        });
+    }
+
+    const { phone, email } = req.body;
+
+    if(!phone){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : 'phone number not provided.',
+            "result" : null
+        });
+    }
+
+    if(!email){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : 'email not provided.',
+            "result" : null
+        });
+    }
+
+    let u1 = await User.findOne({email : email });
+    if(!u1){
+        return res.status(404).json({
+            "statusCode" : 404,
+            "developerMessage" : 'invalid user..try again..',
+            "result" : null
+        });
+    }
+
+    const otp = generateOTP();
+    const now = new Date();
+    const expiration_time = addMinutesToDate(now, 10);
+
+    const otp_instance = await new Otp({
+        userId : u1._id,
+        otp : otp,
+        expiration_time : expiration_time
+    });
+
+    otp_instance.save();
+
+    const msg = message(otp);
+
+    var params = {
+        Message: msg,
+        PhoneNumber: phone
+    }
+
+    AWS.config.update({
+        region : process.env.REGION,
+        accessKeyId : process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey : process.env.AWS_SECRET_ACCESS_KEY,
+        apiVersion: '2010-03-31'
+    })
+
+    var publishTextPromise = new AWS.SNS({}).publish(params).promise();
+
+    publishTextPromise.then((data) => {
+        return res.status(200).json({
+            "statusCode" : 200,
+            "developerMessage" : 'otp sent to phone successfully.',
+            "result" : {
+                'id' : u1._id,
+                'name' : u1.name,
+                'email' : u1.email
+            }
+        });
+    }).catch((err)=> {
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : 'otp sending failed.',
+            "result" : null
+        });
+    })
+
+}
+
+addMinutesToDate = (date, minutes) => {
+    return new Date(date.getTime() + minutes * 60000);
 }
