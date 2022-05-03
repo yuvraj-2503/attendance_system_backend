@@ -236,7 +236,16 @@ exports.verifyOtp = async (req, res) => {
         });
     }
 
-    await User.findByIdAndUpdate(user._id, {verified : true });
+    const now = new Date();
+    if(otpModel.expiration_time <= now.getTime()){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "otp expired. please try again.",
+            "result" : null
+        });
+    }
+
+    // await User.findByIdAndUpdate(user._id, {verified : true });
 
     return res.status(200).json({
         "statusCode" : 200,
