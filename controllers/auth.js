@@ -143,10 +143,13 @@ exports.sendOtp = async (req, res) => {
     }
 
     const otpGenerated = generateOTP();
+    const now = new Date();
+    const expiration_time = addMinutesToDate(now, 10);
 
     let otp = await new Otp({
         userId: user._id,
-        otp : otpGenerated
+        otp : otpGenerated,
+        expiration_time : expiration_time
     });
 
     otp.save();
