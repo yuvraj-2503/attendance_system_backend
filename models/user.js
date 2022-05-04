@@ -21,7 +21,7 @@ var userSchema = new Schema({
     phone: {
         type: String,
         trim: true,
-        // unique: true
+        unique: true
     },
 
     password : {
