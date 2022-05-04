@@ -17,6 +17,14 @@ const otpSchema = new Schema({
     expiration_time : {
         type: Date,
         required: true
+    },
+
+    email : {
+        type : String
+    },
+
+    phone : {
+        type : String
     }
 });
 

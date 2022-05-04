@@ -149,7 +149,8 @@ exports.sendOtp = async (req, res) => {
     let otp = await new Otp({
         userId: user._id,
         otp : otpGenerated,
-        expiration_time : expiration_time
+        expiration_time : expiration_time,
+        email : user.email
     });
 
     otp.save();
@@ -199,7 +200,7 @@ exports.sendOtp = async (req, res) => {
     }catch(e){
         return res.status(400).json({
             "statusCode" : 400,
-            "developerMessage" : e,
+            "developerMessage" : e.message,
             "result" : null
         });
     }
@@ -207,9 +208,9 @@ exports.sendOtp = async (req, res) => {
 }
 
 exports.verifyOtp = async (req, res) => {
-    const { userId, otp } = req.body;
+    const { email, otp} = req.body;
 
-    let user = await User.findById(userId);
+    let user = await User.findOne({ email : email });
     if(!user){
         return res.status(400).json({
             "statusCode" : 400,
@@ -226,7 +227,7 @@ exports.verifyOtp = async (req, res) => {
         });
     }
 
-    let otpModel = await Otp.findOne({userId : user._id, otp : otp });
+    let otpModel = await Otp.findOne({userId : user._id, otp : otp, email : email });
 
     if(!otpModel){
         return res.status(400).json({
@@ -380,7 +381,7 @@ exports.updatePhoneNumber = async (req, res) => {
         });
     }
 
-    const { email, phone, password } = req.body;
+    const { email, phone } = req.body;
 
     let u1 = await User.findOne({ email: email });
     if(!u1){
@@ -391,17 +392,7 @@ exports.updatePhoneNumber = async (req, res) => {
         });
     }
 
-    const match = await bcrypt.compare(password, u1.password);
-
-    if(!match){
-        return res.status(401).json({
-            "statusCode" : 401,
-            "developerMessage" : 'invalid password..you are not authorized to update..',
-            "result" : null
-        });
-    }
-
-    await User.findOneAndUpdate({ email: u1.email, password: u1.password }, {phone: phone }).then((result) => {
+    await User.findOneAndUpdate({ email: u1.email }, {phone: phone }).then((result) => {
         // console.log(result);
         // console.log(err);
         // if(err){
@@ -468,7 +459,8 @@ exports.sendOtpToPhone = async (req, res) => {
     const otp_instance = await new Otp({
         userId : u1._id,
         otp : otp,
-        expiration_time : expiration_time
+        expiration_time : expiration_time,
+        phone : phone
     });
 
     otp_instance.save();
@@ -507,6 +499,56 @@ exports.sendOtpToPhone = async (req, res) => {
         });
     })
 
+}
+
+exports.verifyPhoneOtp = async (req, res) => {
+    const { email, phone, otp } = req.body;
+
+    let user = await User.findOne({ email : email });
+    if(!user){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "user not found.",
+            "result" : null
+        });
+    }
+
+    if(user.verified){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "user already verified.",
+            "result" : null
+        });
+    }
+
+    let otpModel = await Otp.findOne({userId : user._id, otp : otp, phone : phone });
+
+    if(!otpModel){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "invalid otp.",
+            "result" : null
+        });
+    }
+
+    const now = new Date();
+    if(otpModel.expiration_time <= now.getTime()){
+        return res.status(400).json({
+            "statusCode" : 400,
+            "developerMessage" : "otp expired. please try again.",
+            "result" : null
+        });
+    }
+
+    return res.status(200).json({
+        "statusCode" : 200,
+        "developerMessage" : "otp verified successfully.",
+        "result" : {
+            "id" : user._id,
+            "name" : user.name,
+            "email" : user.email
+        }
+    });
 }
 
 addMinutesToDate = (date, minutes) => {
