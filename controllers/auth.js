@@ -56,7 +56,7 @@ exports.signup = async (req, res) =>{
         }).catch((err) => {
             return res.status(400).json({
                 "statusCode" : 400,
-                "developerMessage" : "some error occurred." ,
+                "developerMessage" : err.message ,
                 "result" : null
             })
         });
