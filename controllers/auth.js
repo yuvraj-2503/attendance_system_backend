@@ -130,7 +130,7 @@ exports.sendOtp = async (req, res) => {
         });
     }
 
-    const { name, email } = req.body;
+    const { email } = req.body;
 
     let user = await User.findOne({ email : email, verified : false }); 
 
