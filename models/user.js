@@ -18,12 +18,6 @@ var userSchema = new Schema({
         unique: true
     },
 
-    phone: {
-        type: String,
-        trim: true,
-        unique: true
-    },
-
     password : {
         type : String,
         required : true
@@ -46,9 +40,9 @@ var userSchema = new Schema({
         default: false
     },
 
-    phoneVerified : {
-        type: Boolean,
-        default: false
+    role : {
+        type : String,
+        trim : true
     },
 
     classes : {

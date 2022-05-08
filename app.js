@@ -17,6 +17,7 @@ mongoose.connect(process.env.DATABASE, {
     console.log('DB CONNECTED');
 })
 
+// MIDDLEWARE
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
@@ -25,8 +26,10 @@ app.use(cors());
 // MY ROUTES
 app.use('/api', authRoutes)
 
+// SETTING THE PORT
 const port = process.env.PORT || 5000;
 
+// STARTING THE SERVER
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 }) 

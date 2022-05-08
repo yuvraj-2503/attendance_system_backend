@@ -22,7 +22,7 @@ exports.signup = async (req, res) =>{
         })
     }
     
-    const { name, email, password , college, department } = req.body;
+    const { name, email, password , college, department, role } = req.body;
 
     let u1 = User.findOne({email }).then(async (err, result) => {
         if(err || result){
@@ -39,7 +39,8 @@ exports.signup = async (req, res) =>{
             email: email,
             password: hashedPassword,
             college : college,
-            department : department
+            department : department,
+            role : role
         });
 
         user.save().then((result)=> {
@@ -80,6 +81,14 @@ exports.signin = (req, res) => {
             return res.status(404).json({
                 "statusCode" : 404,
                 "developerMessage" : 'email does not exists...signup to continue',
+                "result" : null
+            })
+        }
+
+        if(!result.verified){
+            return res.status(404).json({
+                "statusCode" : 404,
+                "developerMessage" : 'email not verified...please verify to continue...',
                 "result" : null
             })
         }
@@ -149,8 +158,7 @@ exports.sendOtp = async (req, res) => {
     let otp = await new Otp({
         userId: user._id,
         otp : otpGenerated,
-        expiration_time : expiration_time,
-        email : user.email
+        expiration_time : expiration_time
     });
 
     otp.save();
@@ -227,7 +235,7 @@ exports.verifyOtp = async (req, res) => {
         });
     }
 
-    let otpModel = await Otp.findOne({userId : user._id, otp : otp, email : email });
+    let otpModel = await Otp.findOne({userId : user._id, otp : otp });
 
     if(!otpModel){
         return res.status(400).json({
@@ -246,7 +254,7 @@ exports.verifyOtp = async (req, res) => {
         });
     }
 
-    // await User.findByIdAndUpdate(user._id, {verified : true });
+    await User.findByIdAndUpdate(user._id, {verified : true });
 
     return res.status(200).json({
         "statusCode" : 200,
